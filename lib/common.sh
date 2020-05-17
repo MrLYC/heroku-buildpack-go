@@ -314,10 +314,13 @@ setGoVersionFromEnvironment() {
     ver=${GOVERSION:-$DefaultGoVersion}
 }
 
-supportsGoModules() {
+notSupportsGoModules() {
     local version="${1}"
-    # Ex:      "go1.10.4" | ["go1","10", "4"] | ["1","10","4"]     | [1,10,4]      |  [1]           [10]      == exit 1 (fail)
-    echo "\"${version}\"" | jq -e 'split(".") | map(gsub("go";"")) | map(tonumber) | .[0] >= 1 and .[1] < 11' &> /dev/null
+    # Ex:      "go1.10.4" | ["go1","10", "4"] | ["1","10","4"]     | [1,10,4]      |  [1]           [10]      == exit 0 (success)
+    if echo "\"${version}\"" | jq -e 'split(".") | map(gsub("go";"")) | map(tonumber) | .[0] >= 1 and .[1] < 11' &> /dev/null; then
+        return 1
+    fi
+    return 0
 }
 
 determineTool() {
@@ -341,7 +344,7 @@ determineTool() {
             warn ""
         fi
 
-        if supportsGoModules "${ver}"; then
+        if notSupportsGoModules "${ver}"; then
             err "You are using ${ver}, which does not support Go modules"
             err ""
             err "Go modules are supported by go1.11 and above."
